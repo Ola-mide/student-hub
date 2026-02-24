@@ -115,7 +115,7 @@ const CourseRegistration = () => {
 
         {/* Course Table */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <CardTitle className="text-base">Available Courses ({filteredCourses.length})</CardTitle>
             <div className="text-sm text-muted-foreground">
               Selected: <span className="font-semibold text-foreground">{selected.size}</span> courses • <span className="font-semibold text-foreground">{totalUnits}</span> units
