@@ -37,8 +37,8 @@ const Results = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4">
-          <div className="space-y-1.5 w-48">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="space-y-1.5 w-full sm:w-48">
             <label className="text-sm font-medium">Session</label>
             <Select value={session} onValueChange={setSession}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -47,7 +47,7 @@ const Results = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5 w-48">
+          <div className="space-y-1.5 w-full sm:w-48">
             <label className="text-sm font-medium">Semester</label>
             <Select value={semester} onValueChange={setSemester}>
               <SelectTrigger><SelectValue /></SelectTrigger>
