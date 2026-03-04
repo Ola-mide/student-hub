@@ -1,0 +1,169 @@
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { MOCK_COURSES, FACULTIES, DEPARTMENTS, LEVELS, SESSIONS, SEMESTERS, Course } from "@/data/mockData";
+
+const CourseRegistration = () => {
+  const { student } = useAuth();
+  const [faculty, setFaculty] = useState(student?.faculty || "");
+  const [department, setDepartment] = useState(student?.department || "");
+  const [level, setLevel] = useState(String(student?.level || ""));
+  const [semester, setSemester] = useState<string>("");
+  const [session, setSession] = useState("2024/2025");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const departments = faculty ? DEPARTMENTS[faculty] || [] : [];
+
+  const filteredCourses = MOCK_COURSES.filter(
+    (c) =>
+      (!faculty || c.faculty === faculty) &&
+      (!department || c.department === department) &&
+      (!level || c.level === Number(level)) &&
+      (!semester || c.semester === Number(semester)) &&
+      (!session || c.session === session)
+  );
+
+  const toggleCourse = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const totalUnits = filteredCourses.filter((c) => selected.has(c.id)).reduce((s, c) => s + c.units, 0);
+
+  const handleRegister = () => {
+    if (selected.size === 0) {
+      toast.error("Please select at least one course");
+      return;
+    }
+    toast.success(`Successfully registered for ${selected.size} course(s) (${totalUnits} units)`);
+    setSelected(new Set());
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Course Registration</h1>
+          <p className="text-muted-foreground">Select your courses for the semester</p>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Filter Courses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Faculty</label>
+                <Select value={faculty} onValueChange={(v) => { setFaculty(v); setDepartment(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select faculty" /></SelectTrigger>
+                  <SelectContent>
+                    {FACULTIES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Department</label>
+                <Select value={department} onValueChange={setDepartment} disabled={!faculty}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Level</label>
+                <Select value={level} onValueChange={setLevel}>
+                  <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                  <SelectContent>
+                    {LEVELS.map((l) => <SelectItem key={l} value={String(l)}>{l} Level</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Semester</label>
+                <Select value={semester} onValueChange={setSemester}>
+                  <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
+                  <SelectContent>
+                    {SEMESTERS.map((s) => <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Session</label>
+                <Select value={session} onValueChange={setSession}>
+                  <SelectTrigger><SelectValue placeholder="Select session" /></SelectTrigger>
+                  <SelectContent>
+                    {SESSIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Course Table */}
+        <Card>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <CardTitle className="text-base">Available Courses ({filteredCourses.length})</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Selected: <span className="font-semibold text-foreground">{selected.size}</span> courses • <span className="font-semibold text-foreground">{totalUnits}</span> units
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredCourses.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No courses match your filters. Adjust the filters above.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead className="text-center">Units</TableHead>
+                    <TableHead className="text-center">Type</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCourses.map((course) => (
+                    <TableRow key={course.id} className="cursor-pointer" onClick={() => toggleCourse(course.id)}>
+                      <TableCell>
+                        <Checkbox checked={selected.has(course.id)} onCheckedChange={() => toggleCourse(course.id)} />
+                      </TableCell>
+                      <TableCell className="font-medium">{course.code}</TableCell>
+                      <TableCell>{course.title}</TableCell>
+                      <TableCell className="text-center">{course.units}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={course.type === "compulsory" ? "default" : "secondary"}>
+                          {course.type}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleRegister} disabled={selected.size === 0}>
+                Register Selected Courses
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default CourseRegistration;

@@ -1,19 +1,26 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { BookOpen, ClipboardList, GraduationCap, LogOut, Menu, User, X } from "lucide-react";
+import { BookOpen, ClipboardList, GraduationCap, KeyRound, LogOut, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: GraduationCap },
-  { to: "/courses", label: "Course Registration", icon: ClipboardList },
-  { to: "/results", label: "Results", icon: BookOpen },
+  { to: "/dashboard", label: "Dashboard",           icon: GraduationCap },
+  { to: "/profile",   label: "Profile",             icon: User          },
+  { to: "/courses",   label: "Course Registration", icon: ClipboardList  },
+  { to: "/results",   label: "Results",             icon: BookOpen       },
+  { to: "/change-password", label: "Change Password", icon: KeyRound     },
 ];
 
-const SidebarContent = ({ student, logout, pathname, onNavigate }: {
+const SidebarContent = ({
+  student,
+  logout,
+  pathname,
+  onNavigate,
+}: {
   student: any;
   logout: () => void;
   pathname: string;
@@ -21,13 +28,12 @@ const SidebarContent = ({ student, logout, pathname, onNavigate }: {
 }) => (
   <>
     <div className="p-6 border-b border-primary-foreground/10">
-      <div className="flex items-center gap-2">
+      <Link to="/dashboard" onClick={onNavigate} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
         <GraduationCap className="h-8 w-8 text-secondary" />
         <div>
-          <h1 className="font-bold text-lg leading-tight">Student Portal</h1>
-          <p className="text-xs text-primary-foreground/60">Academic Management</p>
+          <h1 className="font-bold text-lg leading-tight">HUST Student Portal</h1>
         </div>
-      </div>
+      </Link>
     </div>
 
     <nav className="flex-1 p-4 space-y-1">
@@ -108,7 +114,7 @@ export const DashboardLayout = ({ children }: { children: ReactNode }) => {
               </SheetContent>
             </Sheet>
             <GraduationCap className="h-6 w-6 text-secondary" />
-            <span className="font-bold">Student Portal</span>
+            <Link to="/dashboard" className="font-bold">HUST Student Portal</Link>
           </header>
         )}
 
