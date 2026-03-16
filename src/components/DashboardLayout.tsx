@@ -33,7 +33,7 @@ const SidebarContent = ({
         onClick={onNavigate}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       >
-        <GraduationCap className="h-8 w-8 text-secondary" />
+        <img src="/faviconn.ico" alt="Logo" className="h-8 w-8 object-contain" />
         <div>
           <h1 className="font-bold text-lg leading-tight">HUST Student Portal</h1>
         </div>
@@ -121,7 +121,7 @@ export const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 />
               </SheetContent>
             </Sheet>
-            <GraduationCap className="h-6 w-6 text-secondary" />
+            <img src="/faviconn.ico" alt="Logo" className="h-6 w-6 object-contain" />
             <Link
               to="/dashboard"
               onClick={() => setOpen(false)}
