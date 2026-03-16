@@ -8,11 +8,11 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard",           icon: GraduationCap },
-  { to: "/profile",   label: "Profile",             icon: User          },
-  { to: "/courses",   label: "Course Registration", icon: ClipboardList  },
-  { to: "/results",   label: "Results",             icon: BookOpen       },
-  { to: "/change-password", label: "Change Password", icon: KeyRound     },
+  { to: "/dashboard",       label: "Dashboard",          icon: GraduationCap },
+  { to: "/profile",         label: "Profile",            icon: User          },
+  { to: "/courses",         label: "Course Registration",icon: ClipboardList  },
+  { to: "/results",         label: "Results",            icon: BookOpen       },
+  { to: "/change-password", label: "Change Password",    icon: KeyRound       },
 ];
 
 const SidebarContent = ({
@@ -28,7 +28,11 @@ const SidebarContent = ({
 }) => (
   <>
     <div className="p-6 border-b border-primary-foreground/10">
-      <Link to="/dashboard" onClick={onNavigate} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <Link
+        to="/dashboard"
+        onClick={onNavigate}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      >
         <GraduationCap className="h-8 w-8 text-secondary" />
         <div>
           <h1 className="font-bold text-lg leading-tight">HUST Student Portal</h1>
@@ -100,7 +104,11 @@ export const DashboardLayout = ({ children }: { children: ReactNode }) => {
           <header className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -114,7 +122,13 @@ export const DashboardLayout = ({ children }: { children: ReactNode }) => {
               </SheetContent>
             </Sheet>
             <GraduationCap className="h-6 w-6 text-secondary" />
-            <Link to="/dashboard" className="font-bold">HUST Student Portal</Link>
+            <Link
+              to="/dashboard"
+              onClick={() => setOpen(false)}
+              className="font-bold hover:opacity-80 transition-opacity"
+            >
+              HUST Student Portal
+            </Link>
           </header>
         )}
 

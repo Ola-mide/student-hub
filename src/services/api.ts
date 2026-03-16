@@ -162,9 +162,7 @@ async function apiCall<T>(
   });
 
   if (!response.ok) {
-    // Handle authentication errors
     if (response.status === 401) {
-      // Clear auth data on 401
       localStorage.removeItem("auth_token");
       localStorage.removeItem("student_session");
       const error: ApiError = {
@@ -184,9 +182,8 @@ async function apiCall<T>(
   return response.json();
 }
 
-// Student API endpoints
+// Real API endpoints
 export const studentAPI = {
-  // Registration
   register: async (data: StudentRegistrationData) => {
     return apiCall("/students/register", {
       method: "POST",
@@ -194,7 +191,6 @@ export const studentAPI = {
     });
   },
 
-  // Profile
   getProfile: async (): Promise<StudentProfile> => {
     return apiCall("/students/profile");
   },
@@ -206,7 +202,6 @@ export const studentAPI = {
     });
   },
 
-  // Password
   changePassword: async (data: PasswordChangeRequest) => {
     return apiCall("/students/change-password", {
       method: "POST",
@@ -214,7 +209,6 @@ export const studentAPI = {
     });
   },
 
-  // Course Registration
   registerCourses: async (data: CourseRegistrationRequest) => {
     return apiCall("/students/courses/register", {
       method: "POST",
@@ -238,7 +232,6 @@ export const studentAPI = {
     });
   },
 
-  // Results
   getAllResults: async (session?: string) => {
     const params = new URLSearchParams();
     if (session) params.append("session", session);
@@ -249,23 +242,275 @@ export const studentAPI = {
   },
 
   getCourseResult: async (courseId: string) => {
-    return apiCall<CourseResultDetail>(
-      `/students/results/${courseId}`
-    );
+    return apiCall<CourseResultDetail>(`/students/results/${courseId}`);
   },
 };
 
-// Mock API for development (falls back to mock data if API not available)
+// Helper: get current logged-in student from localStorage
+function getSessionStudent() {
+  try {
+    const saved = localStorage.getItem("student_session");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Mock results keyed by student id — mirrors mockData.ts MOCK_RESULTS
+const MOCK_RESULT_DATA: Record<string, ResultData[]> = {
+  "1": [
+    {
+      id: "r1",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r1", courseCode: "CSC 201", courseTitle: "Computer Programming II", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 78,
+      grade: "A",
+      gradePoint: 5,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "r2",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r2", courseCode: "CSC 203", courseTitle: "Discrete Mathematics", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 68,
+      grade: "B",
+      gradePoint: 4,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "r3",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r3", courseCode: "CSC 205", courseTitle: "Computer Architecture", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 75,
+      grade: "A",
+      gradePoint: 5,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "r4",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r4", courseCode: "MTH 201", courseTitle: "Mathematical Methods I", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 65,
+      grade: "B",
+      gradePoint: 4,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "r5",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r5", courseCode: "CSC 202", courseTitle: "Object-Oriented Programming", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "2",
+      totalScore: 82,
+      grade: "A",
+      gradePoint: 5,
+      status: "approved",
+      uploadedAt: "2024-07-02T10:00:00Z",
+      approvedAt: "2024-07-02T10:15:00Z",
+    },
+    {
+      id: "r6",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r6", courseCode: "CSC 204", courseTitle: "Introduction to Databases", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "2",
+      totalScore: 63,
+      grade: "B",
+      gradePoint: 4,
+      status: "approved",
+      uploadedAt: "2024-07-02T10:00:00Z",
+      approvedAt: "2024-07-02T10:15:00Z",
+    },
+    {
+      id: "r7",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r7", courseCode: "CSC 206", courseTitle: "Systems Programming", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "2",
+      totalScore: 71,
+      grade: "A",
+      gradePoint: 5,
+      status: "approved",
+      uploadedAt: "2024-07-02T10:00:00Z",
+      approvedAt: "2024-07-02T10:15:00Z",
+    },
+    {
+      id: "r8",
+      studentName: "Adebayo Johnson",
+      registrationNumber: "CSC/2021/001",
+      course: { id: "r8", courseCode: "STA 202", courseTitle: "Statistics for Sciences", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "2",
+      totalScore: 55,
+      grade: "C",
+      gradePoint: 3,
+      status: "approved",
+      uploadedAt: "2024-07-02T10:00:00Z",
+      approvedAt: "2024-07-02T10:15:00Z",
+    },
+  ],
+  "2": [
+    {
+      id: "e1",
+      studentName: "Chioma Okafor",
+      registrationNumber: "ENG/2021/015",
+      course: { id: "e1", courseCode: "CPE 201", courseTitle: "Digital Logic Design", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 72,
+      grade: "A",
+      gradePoint: 5,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "e2",
+      studentName: "Chioma Okafor",
+      registrationNumber: "ENG/2021/015",
+      course: { id: "e2", courseCode: "EEE 201", courseTitle: "Circuit Analysis", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 65,
+      grade: "B",
+      gradePoint: 4,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "e3",
+      studentName: "Chioma Okafor",
+      registrationNumber: "ENG/2021/015",
+      course: { id: "e3", courseCode: "MTH 201", courseTitle: "Engineering Mathematics I", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "1",
+      totalScore: 59,
+      grade: "C",
+      gradePoint: 3,
+      status: "approved",
+      uploadedAt: "2024-03-02T10:00:00Z",
+      approvedAt: "2024-03-02T10:15:00Z",
+    },
+    {
+      id: "e4",
+      studentName: "Chioma Okafor",
+      registrationNumber: "ENG/2021/015",
+      course: { id: "e4", courseCode: "CPE 202", courseTitle: "Microelectronics", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "2",
+      totalScore: 77,
+      grade: "A",
+      gradePoint: 5,
+      status: "approved",
+      uploadedAt: "2024-07-02T10:00:00Z",
+      approvedAt: "2024-07-02T10:15:00Z",
+    },
+    {
+      id: "e5",
+      studentName: "Chioma Okafor",
+      registrationNumber: "ENG/2021/015",
+      course: { id: "e5", courseCode: "EEE 202", courseTitle: "Electromagnetics I", creditUnits: 3 },
+      session: "2023/2024",
+      semester: "2",
+      totalScore: 61,
+      grade: "B",
+      gradePoint: 4,
+      status: "approved",
+      uploadedAt: "2024-07-02T10:00:00Z",
+      approvedAt: "2024-07-02T10:15:00Z",
+    },
+  ],
+};
+
+// Mock profile data keyed by student id
+const MOCK_PROFILE_DATA: Record<string, StudentProfile> = {
+  "1": {
+    id: "1",
+    registrationNumber: "CSC/2021/001",
+    firstName: "Adebayo",
+    lastName: "Johnson",
+    email: "adebayo.johnson@student.edu.ng",
+    phoneNumber: "08012345678",
+    dateOfBirth: "2002-05-15",
+    gender: "Male",
+    address: "12 Adeola Street, Lagos",
+    profilePhotoURL: null,
+    faculty: { id: "fac001", name: "Faculty of Science" },
+    department: { id: "dept001", name: "Computer Science" },
+    levelCode: "300",
+    session: "2024/2025",
+    admissionYear: 2021,
+    status: "active",
+    createdAt: "2021-09-01T08:00:00Z",
+    updatedAt: "2024-01-15T08:00:00Z",
+    maritalStatus: "Single",
+    bloodGroup: "O+",
+    religion: "Christianity",
+  },
+  "2": {
+    id: "2",
+    registrationNumber: "ENG/2021/015",
+    firstName: "Chioma",
+    lastName: "Okafor",
+    email: "chioma.okafor@student.edu.ng",
+    phoneNumber: "08098765432",
+    dateOfBirth: "2001-11-20",
+    gender: "Female",
+    address: "45 Nnamdi Azikiwe Road, Enugu",
+    profilePhotoURL: null,
+    faculty: { id: "fac002", name: "Faculty of Engineering" },
+    department: { id: "dept002", name: "Computer Engineering" },
+    levelCode: "300",
+    session: "2024/2025",
+    admissionYear: 2021,
+    status: "active",
+    createdAt: "2021-09-01T08:00:00Z",
+    updatedAt: "2024-01-15T08:00:00Z",
+    maritalStatus: "Single",
+    bloodGroup: "A+",
+    religion: "Christianity",
+  },
+};
+
+// In-memory profile overrides (simulates PUT /profile persisting within the session)
+const profileOverrides: Record<string, Partial<StudentProfile>> = {};
+
+// Mock API — uses session student data for realistic responses
 export const mockStudentAPI = {
   register: async (data: StudentRegistrationData) => {
-    // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 800));
-    const id = `student${Math.random().toString(36).substr(2, 9)}`;
     return {
       message: "Student registration completed successfully",
       student: {
-        id,
-        registrationNumber: `${data.admissionYear.toString().slice(-2)}/FAC/DEPT/${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        id: `student_${Math.random().toString(36).substr(2, 9)}`,
+        registrationNumber: `${data.admissionYear.toString().slice(-2)}/REG/${Math.random()
+          .toString(36)
+          .substr(2, 6)
+          .toUpperCase()}`,
         email: data.email,
       },
     };
@@ -273,38 +518,27 @@ export const mockStudentAPI = {
 
   getProfile: async (): Promise<StudentProfile> => {
     await new Promise((resolve) => setTimeout(resolve, 600));
-    return {
-      id: "student001",
-      registrationNumber: "23/MAT/15001",
-      firstName: "James",
-      lastName: "Johnson",
-      email: "james.johnson@student.edu",
-      phoneNumber: "08012345678",
-      dateOfBirth: "2002-05-15",
-      gender: "Male",
-      address: "123 Main Street, Lagos",
-      profilePhotoURL: null,
-      faculty: { id: "fac001", name: "Faculty of Science" },
-      department: { id: "dept001", name: "Department of Mathematics" },
-      levelCode: "100",
-      session: "2023/2024",
-      admissionYear: 2023,
-      status: "active",
-      createdAt: "2024-01-01T08:00:00Z",
-      updatedAt: "2024-01-01T08:00:00Z",
-      maritalStatus: "Single",
-      bloodGroup: "O+",
-      religion: "Christianity",
-    };
+    const student = getSessionStudent();
+    const id = student?.id || "1";
+    const base = MOCK_PROFILE_DATA[id] || MOCK_PROFILE_DATA["1"];
+    return { ...base, ...(profileOverrides[id] || {}) };
   },
 
   updateProfile: async (data: StudentProfileUpdate) => {
     await new Promise((resolve) => setTimeout(resolve, 800));
+    const student = getSessionStudent();
+    const id = student?.id || "1";
+    profileOverrides[id] = { ...(profileOverrides[id] || {}), ...data };
     return { message: "Profile updated successfully" };
   },
 
   changePassword: async (data: PasswordChangeRequest) => {
     await new Promise((resolve) => setTimeout(resolve, 800));
+    const student = getSessionStudent();
+    // Validate current password against the mock student data
+    if (student && data.currentPassword !== student.password) {
+      throw { error: "Current password is incorrect", code: 400 };
+    }
     return { message: "Password changed successfully" };
   },
 
@@ -323,26 +557,11 @@ export const mockStudentAPI = {
   ): Promise<RegisteredCoursesResponse> => {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return {
-      courses: [
-        {
-          id: "reg001",
-          course: {
-            id: "course001",
-            courseCode: "MTH101",
-            courseTitle: "Calculus I",
-            creditUnits: 3,
-          },
-          session: session || "2023/2024",
-          semester: semester || "first",
-          status: "active",
-          enrollmentDate: "2024-01-15",
-          registeredAt: "2024-01-15T10:00:00Z",
-        },
-      ],
-      totalCredits: 3,
-      totalCourses: 1,
-      session: session || "2023/2024",
-      semester: semester,
+      courses: [],
+      totalCredits: 0,
+      totalCourses: 0,
+      session: session || "2024/2025",
+      semester,
     };
   },
 
@@ -353,57 +572,58 @@ export const mockStudentAPI = {
 
   getAllResults: async (session?: string): Promise<ResultsResponse> => {
     await new Promise((resolve) => setTimeout(resolve, 600));
+    const student = getSessionStudent();
+    const id = student?.id || "1";
+    const allCourses = MOCK_RESULT_DATA[id] || MOCK_RESULT_DATA["1"];
+
+    // Filter by session if provided
+    const courses = session
+      ? allCourses.filter((r) => r.session === session)
+      : allCourses;
+
+    const totalCredits = courses.reduce((s, r) => s + r.course.creditUnits, 0);
+    const totalGradePoint = courses.reduce((s, r) => s + r.gradePoint * r.course.creditUnits, 0);
+    const gpa = totalCredits > 0 ? Number((totalGradePoint / totalCredits).toFixed(2)) : 0;
+
     return {
-      courses: [
-        {
-          id: "result001",
-          studentName: "James Johnson",
-          registrationNumber: "23/MAT/15001",
-          course: {
-            id: "course001",
-            courseCode: "MTH101",
-            courseTitle: "Calculus I",
-            creditUnits: 3,
-          },
-          session: session || "2023/2024",
-          semester: "first",
-          totalScore: 85,
-          grade: "A",
-          gradePoint: 5,
-          status: "approved",
-          uploadedAt: "2024-03-02T10:00:00Z",
-          approvedAt: "2024-03-02T10:15:00Z",
-        },
-      ],
-      gpa: 5.0,
-      totalCredits: 3,
-      totalGradePoint: 15,
+      courses,
+      gpa,
+      totalCredits,
+      totalGradePoint,
       session: session || "2023/2024",
     };
   },
 
   getCourseResult: async (courseId: string): Promise<CourseResultDetail> => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-      courseCode: "MTH101",
-      courseTitle: "Calculus I",
-      creditUnits: 3,
-      continuousAssessment: 20,
-      examination: 65,
-      totalScore: 85,
-      grade: "A",
-      gradePoint: 5,
-      remark: "Pass",
-      status: "approved",
-      uploadedAt: "2024-03-02T10:00:00Z",
-      approvedAt: "2024-03-02T10:15:00Z",
-    };
+    const student = getSessionStudent();
+    const id = student?.id || "1";
+    const allCourses = MOCK_RESULT_DATA[id] || [];
+    const found = allCourses.find((r) => r.id === courseId);
+
+    if (found) {
+      return {
+        courseCode: found.course.courseCode,
+        courseTitle: found.course.courseTitle,
+        creditUnits: found.course.creditUnits,
+        continuousAssessment: Math.round(found.totalScore * 0.3),
+        examination: Math.round(found.totalScore * 0.7),
+        totalScore: found.totalScore,
+        grade: found.grade,
+        gradePoint: found.gradePoint,
+        remark: found.grade === "F" ? "Fail" : "Pass",
+        status: found.status,
+        uploadedAt: found.uploadedAt,
+        approvedAt: found.approvedAt,
+      };
+    }
+
+    throw { error: "Result not found", code: 404 };
   },
 };
 
 // Export a function to choose which API to use
 export function getStudentAPI() {
-  // For development, use mock API if actual API is not available
   const useReal = !!import.meta.env.VITE_API_URL;
   return useReal ? studentAPI : mockStudentAPI;
 }

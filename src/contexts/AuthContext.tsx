@@ -19,23 +19,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (student) {
       localStorage.setItem("student_session", JSON.stringify(student));
+      // Set a mock auth token so API calls include Authorization header
+      if (!localStorage.getItem("auth_token")) {
+        localStorage.setItem("auth_token", `mock_token_${student.id}`);
+      }
     } else {
       localStorage.removeItem("student_session");
+      localStorage.removeItem("auth_token");
     }
   }, [student]);
 
   const login = (matricNumber: string, password: string) => {
     const found = MOCK_STUDENTS.find(
-      (s) => s.matricNumber.toLowerCase() === matricNumber.toLowerCase() && s.password === password
+      (s) =>
+        s.matricNumber.toLowerCase() === matricNumber.toLowerCase() &&
+        s.password === password
     );
     if (found) {
       setStudent(found);
+      // Store a mock token for API calls
+      localStorage.setItem("auth_token", `mock_token_${found.id}`);
       return { success: true };
     }
     return { success: false, error: "Invalid matric number or password" };
   };
 
-  const logout = () => setStudent(null);
+  const logout = () => {
+    setStudent(null);
+    localStorage.removeItem("auth_token");
+  };
 
   return (
     <AuthContext.Provider value={{ student, login, logout, isAuthenticated: !!student }}>
