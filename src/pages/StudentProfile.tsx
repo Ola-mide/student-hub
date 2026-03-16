@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, Loader2, User, X } from "lucide-react";
 import { toast } from "sonner";
 import { getStudentAPI, type StudentProfile as StudentProfileData, type StudentProfileUpdate } from "@/services/api";
 
@@ -20,6 +20,10 @@ const StudentProfile = () => {
 
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
   const [editData, setEditData] = useState<StudentProfileUpdate>({});
+
+  // Passport photo state
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -41,10 +45,13 @@ const StudentProfile = () => {
           bloodGroup: data.bloodGroup,
           religion: data.religion,
         });
+        if (data.profilePhotoURL) {
+          setPhotoPreview(data.profilePhotoURL);
+        }
         setError("");
       } catch (err) {
-        const errorMsg = typeof err === "object" && err !== null && "error" in err 
-          ? (err as any).error 
+        const errorMsg = typeof err === "object" && err !== null && "error" in err
+          ? (err as any).error
           : "Failed to load profile";
         setError(errorMsg);
         toast.error(errorMsg);
@@ -64,6 +71,37 @@ const StudentProfile = () => {
     setSuccess(false);
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be smaller than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setPhotoPreview(result);
+      // Store the data URL as the profilePhotoURL for the API
+      setEditData((prev) => ({ ...prev, profilePhotoURL: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setEditData((prev) => ({ ...prev, profilePhotoURL: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -75,8 +113,8 @@ const StudentProfile = () => {
       toast.success("Profile updated successfully");
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      const errorMsg = typeof err === "object" && err !== null && "error" in err 
-        ? (err as any).error 
+      const errorMsg = typeof err === "object" && err !== null && "error" in err
+        ? (err as any).error
         : "Failed to update profile";
       setError(errorMsg);
       toast.error(errorMsg);
@@ -95,9 +133,11 @@ const StudentProfile = () => {
         bloodGroup: profile.bloodGroup,
         religion: profile.religion,
       });
+      setPhotoPreview(profile.profilePhotoURL || null);
     }
     setIsEditing(false);
     setError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (isFetching) {
@@ -171,6 +211,92 @@ const StudentProfile = () => {
             {error}
           </div>
         )}
+
+        {/* Passport Photo */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Passport Photo</CardTitle>
+            <CardDescription>
+              {isEditing
+                ? "Upload a clear passport-style photo (max 2MB)"
+                : "Your profile photo"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              {/* Photo display */}
+              <div className="relative shrink-0">
+                <div className="h-28 w-24 rounded-md border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Passport photo"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-10 w-10 text-muted-foreground/50" />
+                  )}
+                </div>
+                {/* Passport-style overlay label */}
+                <div className="mt-1 text-center">
+                  <span className="text-xs text-muted-foreground">Passport Size</span>
+                </div>
+              </div>
+
+              {/* Upload controls */}
+              <div className="space-y-3">
+                {isEditing ? (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                      id="passport-photo-input"
+                      disabled={isSaving}
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isSaving}
+                        className="gap-2"
+                      >
+                        <Camera className="h-4 w-4" />
+                        {photoPreview ? "Change Photo" : "Upload Photo"}
+                      </Button>
+                      {photoPreview && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemovePhoto}
+                          disabled={isSaving}
+                          className="gap-2 text-destructive hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Accepted formats: JPG, PNG, GIF · Max size: 2MB
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {photoPreview
+                      ? "Photo uploaded. Click Edit Profile to change it."
+                      : "No photo uploaded yet. Click Edit Profile to add one."}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Basic Information */}
         <Card>
@@ -252,21 +378,14 @@ const StudentProfile = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="photo">Profile Photo URL</Label>
-                <Input
-                  id="photo"
-                  value={editData.profilePhotoURL || ""}
-                  onChange={(e) => handleInputChange("profilePhotoURL", e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
-                  disabled={isSaving}
-                />
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="marital">Marital Status</Label>
-                  <Select value={editData.maritalStatus || ""} onValueChange={(v) => handleInputChange("maritalStatus", v)} disabled={isSaving}>
+                  <Select
+                    value={editData.maritalStatus || ""}
+                    onValueChange={(v) => handleInputChange("maritalStatus", v)}
+                    disabled={isSaving}
+                  >
                     <SelectTrigger id="marital">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -282,7 +401,11 @@ const StudentProfile = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="blood">Blood Group</Label>
-                  <Select value={editData.bloodGroup || ""} onValueChange={(v) => handleInputChange("bloodGroup", v)} disabled={isSaving}>
+                  <Select
+                    value={editData.bloodGroup || ""}
+                    onValueChange={(v) => handleInputChange("bloodGroup", v)}
+                    disabled={isSaving}
+                  >
                     <SelectTrigger id="blood">
                       <SelectValue placeholder="Select blood group" />
                     </SelectTrigger>
@@ -303,7 +426,11 @@ const StudentProfile = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="religion">Religion</Label>
-                <Select value={editData.religion || ""} onValueChange={(v) => handleInputChange("religion", v)} disabled={isSaving}>
+                <Select
+                  value={editData.religion || ""}
+                  onValueChange={(v) => handleInputChange("religion", v)}
+                  disabled={isSaving}
+                >
                   <SelectTrigger id="religion">
                     <SelectValue placeholder="Select religion" />
                   </SelectTrigger>
@@ -354,44 +481,6 @@ const StudentProfile = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Dates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Important Dates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {[
-                {
-                  label: "Account Created",
-                  value: new Date(profile.createdAt).toLocaleString("en-NG", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                },
-                {
-                  label: "Last Updated",
-                  value: new Date(profile.updatedAt).toLocaleString("en-NG", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-sm text-muted-foreground">{label}</p>
-                  <p className="text-sm font-medium mt-1">{value}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );
